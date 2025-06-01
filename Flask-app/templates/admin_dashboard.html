@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="h3 mb-4 text-gray-800">Administrator Panel</h1>
+
+    {# Flash messages section (if applicable) #}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            {# System Overview Card - Primary Blue #}
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <h5 class="card-title text-primary">System Overview</h5>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Total Users:
+                            <span class="badge bg-primary text-white">{{ user_count }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Total Meter Readings:
+                            <span class="badge bg-success text-white">{{ reading_count }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Total Pincodes:
+                            <span class="badge bg-info text-white">{{ pincode_count }}</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-4">
+            {# Admin Actions Card - Success Green #}
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <h5 class="card-title text-success">Admin Actions</h5>
+                    <div class="list-group">
+                        <a href="{{ url_for('view_users') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-users me-2 text-primary"></i> Manage Users
+                        </a>
+                        <a href="{{ url_for('admin_schedules') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-calendar-alt me-2 text-info"></i> Manage Schedules
+                        </a>
+                        {# ADDED THIS LINK: Link to create_schedule for admins #}
+                        <a href="{{ url_for('create_schedule') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-plus-circle me-2 text-success"></i> Add New Schedule
+                        </a>
+                        <a href="{{ url_for('unit_pincode') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-key me-2 text-warning"></i> Unit Pincode Management
+                        </a>
+                        <a href="{{ url_for('post_announcement') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-bullhorn me-2 text-danger"></i> Post Announcement
+                        </a>
+                        <a href="{{ url_for('admin_history') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-history me-2 text-dark"></i> View All Readings History
+                        </a>
+                         <a href="{{ url_for('export_data') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-file-export me-2 text-secondary"></i> Export Data
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
