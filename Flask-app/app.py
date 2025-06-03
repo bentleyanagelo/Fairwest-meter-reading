@@ -1,3 +1,6 @@
+# Add to top with other imports
+import os
+from dotenv import load_dotenv  # For development only
 from flask import Flask, render_template, request, redirect, url_for, session, flash, Response
 import psycopg2
 import psycopg2.extras
@@ -12,96 +15,30 @@ from psycopg2 import Error as Psycopg2Error
 from forms import ScheduleForm 
 from psycopg2 import IntegrityError
 
+load_dotenv()  # Load .env file in development
 
+# --- App Configuration ---
 app = Flask(__name__)
-app.secret_key = 'your_secret_key'
+app.secret_key = os.getenv('SECRET_KEY')  # Required in production
+local_tz = pytz.timezone(os.getenv('TZ', 'UTC'))  # Default to UTC
 
-# Define the local timezone (change to your actual timezone if different)
-local_tz = pytz.timezone('Africa/Johannesburg')
 
+# --- Database Configuration ---
+def get_db():
+    conn = psycopg2.connect(
+         host=os.getenv('DB_HOST'),
+        database=os.getenv('DB_NAME'),
+        user=os.getenv('DB_USER'),
+        password=os.getenv('DB_PASSWORD', ''),
+        port=os.getenv('DB_PORT')
+    )
+    conn.autocommit = True
+    return conn
+    
 
 @app.context_processor
 def inject_now():
     return {'now': datetime.now(local_tz)}
-
-# --- Database Setup ---
-def get_db():
-    conn = psycopg2.connect(
-        host="127.0.0.1",
-        database="fairwest",
-        user="postgres",
-        password="admin"
-    )
-    conn.autocommit = True
-
-    return conn
-
-# --- Initialize Database Tables ---
-def init_db():
-    conn = get_db()
-    cursor = conn.cursor()
-    try:
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS users (
-                id SERIAL PRIMARY KEY,
-                username TEXT UNIQUE NOT NULL,
-                email TEXT UNIQUE NOT NULL,
-                password TEXT NOT NULL,
-                unit_number TEXT UNIQUE NOT NULL,
-                is_admin INTEGER DEFAULT 0,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
-
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS meter_readings (
-                id SERIAL PRIMARY KEY,
-                user_id INTEGER NOT NULL,
-                reading REAL NOT NULL,
-                notes TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users (id)
-            )
-        ''')
-
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS schedules (
-                id SERIAL PRIMARY KEY,
-                user_id INTEGER NOT NULL,
-                title TEXT NOT NULL,
-                description TEXT,
-                scheduled_date TIMESTAMP NOT NULL,
-                is_completed INTEGER DEFAULT FALSE,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users (id)
-            )
-        ''')
-
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS unit_pincode (
-                id SERIAL PRIMARY KEY,
-                unit_number TEXT UNIQUE NOT NULL,
-                pin_code TEXT NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
-
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS announcements (
-                id SERIAL PRIMARY KEY,
-                title TEXT NOT NULL,
-                message TEXT NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
-                               
-    
-
-    except Exception as e:
-        print(f"Database error: {e}")
-    finally:
-        cursor.close()
-        conn.close()
 
 # Add this before creating routes
 @app.template_filter('format_date')
@@ -377,6 +314,7 @@ def delete_user(user_id):
 
     return redirect(url_for('view_users')) 
 
+
 # --- View Announcements ---
 @app.route('/announcements')
 def announcements():
@@ -615,7 +553,7 @@ def user_schedules():
 
     try:
         # Get system-wide schedules (user_id IS NULL)
-        # and also include user_id if you want to determine 'creator'
+       
         cursor.execute("""
             SELECT 
                 s.id, s.title, s.description, s.scheduled_date, s.is_completed, s.user_id,
@@ -1097,5 +1035,5 @@ def export_data():
 
 # --- Initialize App ---
 if __name__ == '__main__':
-    init_db()
+    #init_db()
     app.run(debug=True)
